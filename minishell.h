@@ -7,6 +7,7 @@
 
 extern char **g_env;
 
+void echo (char **args);
 char **copy_env(char **envp);
 void free_env(char **envp);
 void shell_loop(void);
