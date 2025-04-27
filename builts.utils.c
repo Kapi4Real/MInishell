@@ -25,3 +25,26 @@ void echo (char **args)
 	if (newline)
 		printf("\n");
 }
+
+void ft_pwd(void)
+{
+	char *cwd[PATH_MAX];
+
+	if(getcwd(cwd, sizeof(cwd) != NULL))
+		printf("%s",cwd);
+	else
+		perror("minishell : pwd")
+}
+
+void ft_env (char **envp)
+{
+	int	i;
+
+	i = 0;
+	while(envp[i])
+	{
+		printf("%s",envp[i]);
+		i++;
+	}
+}
+
