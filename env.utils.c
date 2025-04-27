@@ -74,21 +74,6 @@ void shell_loop(void)
 
 }
 
-void set_env_var(char ***env, const char *key, const char *value)
-{
-	int	count;
-	char **new_env;
-	char *new_entry;
-	size_t key_len;
-
-	count = 0;
-	*new_env = NULL;
-	new_entry = NULL;
-	key_len = strlen(key);
-
-	new_entry = malloc(key_len + strlen(value) + 2);
-}
-
 void set_env_var(char ***env, const char *value, const char *value)
 {
 	int count = 0;
