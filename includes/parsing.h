@@ -35,7 +35,7 @@ typedef struct s_cmd
 	t_list			*arguments;
 	t_token			*redirection;
 	int				exit_s;
-	int				intput_fd;
+	int				input_fd;
 	int				output_fd;
 	__pid_t			pid;
 	struct s_cmd	*next;

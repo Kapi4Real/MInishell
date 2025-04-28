@@ -30,10 +30,10 @@ void ft_pwd(void)
 {
 	char *cwd[PATH_MAX];
 
-	if(getcwd(cwd, sizeof(cwd) != NULL))
+	if(getcwd(cwd, sizeof(cwd)) != NULL)
 		printf("%s",cwd);
 	else
-		perror("minishell : pwd")
+		perror("minishell : pwd");
 }
 
 void ft_env (char **envp)
