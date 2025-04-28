@@ -1,18 +1,41 @@
 #include "minishell.h"
 
-char **g_env = NULL;
-
-int main (int ac, char **av, char **envp)
+int main(int ac, char **av, char **envp)
 {
-	(void)ac;
-	(void)av;
+    char    *line;
+    t_token *tokens;
+    t_cmd   *cmds;
+    int     status;
 
-	g_env = copy_env(envp);
-
-	if (!g_env)
-		return (1);
-	shell_loop();
-
-	free_env(g_env);
-	return (0); 
+    (void)ac;
+    (void)av;
+    g_env = copy_env(envp);
+    if (!g_env)
+        return (1);
+    status = 0;
+    while (1)
+    {
+        printf("minishell> ");
+        line = get_next_line(0);
+        if (!line)
+        {
+            printf("\n");
+            break;
+        }
+        if (*line)
+        {
+            tokens = tokenizer(line);
+            if (parsing(&tokens))
+            {
+                cmds = cmd(tokens);
+                status = exec_commands(cmds, g_env);
+                cmd_clear(&cmds);
+            }
+            token_clear(&tokens);
+        }
+        free(line);
+    }
+    free_env(g_env);
+    return (status);
 }
+
