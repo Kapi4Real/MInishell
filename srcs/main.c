@@ -56,11 +56,15 @@ int execute_command(char **args) {
     return 0;
 }
 
-int main() {
+int main(int ac, char **av,char **envp) 
+{
+	(void)ac;
+	(void)av;
     char *input;
     t_token *tokens;
     t_cmd *cmds;
 
+    g_env = envp;  
     setup_signals();
 
     while (1) {

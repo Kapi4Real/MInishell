@@ -31,6 +31,7 @@ int	changes(t_list *lst, t_env *envi, int exit_status)
 	return (env_var_exists(content + 1, i - 1, envi) ? i : 0);
 }
 
+/*
 char	*expand_var(char *str, t_env *env, int exit_status)
 {
 	char	*var_name;
@@ -49,4 +50,4 @@ char	*expand_var(char *str, t_env *env, int exit_status)
 		tmp = tmp->next;
 	}
 	return (ft_strdup(""));
-}
+}*/

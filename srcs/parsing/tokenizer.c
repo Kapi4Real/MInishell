@@ -27,21 +27,60 @@ void skip(char *s, int *i)
 int tokenize_word(t_token **tok_lst, char *val)
 {
     int i = 0;
-    while (val[i] && !ft_isspace(val[i])
+    while (val[i] && !ft_isspace(val[i]) 
            && val[i] != '|' && val[i] != '<' && val[i] != '>')
     {
-        if (val[i] == '$' && (val[i+1] == '?' || ft_isalnum(val[i+1])))
+        if (val[i] == '$' && (val[i+1] == '?' || ft_isalnum(val[i+1]) || val[i+1] == '_'))
         {
+            // Crée un token spécial pour les variables
+            int start = i;
             i += (val[i+1] == '?') ? 2 : 1;
-            while (val[i] && ft_isalnum(val[i]))
+            while (val[i] && (ft_isalnum(val[i]) || val[i] == '_'))
                 i++;
+            add_token(tok_lst, 
+                create_token(ft_substr(val, start, i - start), EXPAND_VAR));
             continue;
         }
         i++;
     }
-    if (i > 0)
+    if (i > 0 && val[0] != '$')
         add_token(tok_lst, create_token(ft_substr(val, 0, i), WORD));
     return i;
+}
+
+
+
+char *expand_var(char *str, t_env *env)
+{
+    if (str[0] != '$') return ft_strdup(str);
+    
+    if (str[1] == '?') {
+        char *exit_status = ft_itoa(g_exit_status);
+        return exit_status;
+    }
+
+    char *var_name = str + 1;
+    t_env *node = env;
+    while (node) {
+        if (ft_strcmp(node->name, var_name) == 0)
+            return ft_strdup(node->val);
+        node = node->next;
+    }
+    return ft_strdup(""); // Retourne chaîne vide si variable non trouvée
+}
+
+void expand_tokens(t_token **tokens, t_env *env)
+{
+    t_token *tmp = *tokens;
+    while (tmp) {
+        if (tmp->type == EXPAND_VAR) {
+            char *expanded = expand_var(tmp->val, env);
+            free(tmp->val);
+            tmp->val = expanded;
+            tmp->type = WORD;
+        }
+        tmp = tmp->next;
+    }
 }
 
 static void add_symbol(t_token **tok_lst, char *symbol, int double_redirect)
