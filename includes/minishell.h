@@ -1,44 +1,86 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   minishell.h                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: togomez <togomez@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/04/17 10:39:17 by togomez           #+#    #+#             */
-/*   Updated: 2025/04/25 11:21:12 by togomez          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
+# include <fcntl.h>
+# include <unistd.h>
 # include "libft.h"
 # include "parsing.h"
-# include "stdio.h"
-# include "get_next_line.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+# include <sys/resource.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <readline/readline.h>
+# include <readline/history.h>
+# include <signal.h>
+# include <errno.h>
+#include <stdbool.h> 
 
+extern int g_sig;
+extern int g_exit_status;
 extern char **g_env;
+extern volatile sig_atomic_t g_sigint_received;
 
-void set_env_var(char ***env, const char *key, const char *value);
-void echo (char **args);
-char **copy_env(char **envp);
-void free_env(char **envp);
-void shell_loop(void);
-int    exec_commands(t_cmd *cmds, char **envp);
-int    exec_commands(t_cmd *cmds, char **envp);
-char  *find_executable(char *cmd, char **envp);
-int    handle_redirections(t_cmd *cmd);
-int exec_commands(t_cmd *cmds, char **envp);
-int handle_redirections(t_cmd *cmd);
-int is_builtin(char *cmd);
-int run_builtin(t_cmd *cmd);
-char *find_executable(char *cmd, char **envp);
+typedef struct s_token t_token;
+typedef struct s_cmd t_cmd;
+typedef struct s_env t_env;
 
+typedef struct s_env {
+    char        *name;
+    char        *val;
+    struct s_env *next;
+} t_env;
 
+typedef struct s_minishell {
+    t_cmd    *commands;
+    int      n_line;
+    t_env    *env;
+} t_minishell;
 
+/* Builtins */
+int     ft_echo(char **args);
+int     ft_pwd(void);
+int     ft_env(char **env);
+int     ft_exit(char **args);
+int     ft_unset(char **args);
+int     ft_export(char **args);
+int     ft_cd(char **args);
+int     is_builtin(char *cmd);
+int     run_builtin(t_cmd *cmd);
+
+/* Environment */
+t_env   *envp_to_lst(char **envp);
+void    env_clear(t_env *lst);
+char    **env_to_array(t_env *env);
+
+/* Execution */
+int exec_external(t_cmd *cmd, char **envp);
+int     exec_commands(t_cmd *cmds, char **envp);
+int     exec_single_command(t_cmd *cmd, char **envp);
+char    *find_executable(char *cmd);
+
+/* Signals */
+void    setup_signals(void);
+void    handle_sigint(int sig);
+
+/* Utils */
+void    free_array(char **array);
+char    *ft_strjoin3(char const *s1, char const *s2, char const *s3);
+
+/* Utils */
+void free_array(char **array);
+int     handle_redirections(t_token *token);
+char	*build_full_path(char *dir, char *cmd);
+void	cmd_not_found(char *cmd);
+void	exec_child(char *path, char **args, char **envp);
+int	fork_error(char *path, char **args);
+int	handle_heredoc(char *delimiter, int *input_fd, int first_exit_s, int n_line);
+
+/* Environment */
+char **env_to_array(t_env *env);
+void    free_str_array(char **array);
+char    **list_to_str_array(t_list *lst);
+
+/* Parsing */
+t_cmd *parser(t_token *tokens);
 
 #endif

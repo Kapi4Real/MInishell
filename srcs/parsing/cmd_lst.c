@@ -24,36 +24,53 @@ t_cmd	*cmd_new(void)
 	new->exit_s = 0;
 	new->input_fd = -1;
 	new->output_fd = -1;
+	new->next = NULL;
 	return (new);
 }
 
 t_cmd	*cmd_last(t_cmd *lst)
 {
-	while (lst && lst->next)
+	if (!lst)
+		return (NULL);
+	while (lst->next)
 		lst = lst->next;
 	return (lst);
 }
 
 void	cmd_add_back(t_cmd **lst, t_cmd *new)
 {
+	t_cmd	*last;
+
 	if (!lst || !new)
 		return ;
 	if (*lst)
-		cmd_last(*lst)->next = new;
+	{
+		last = cmd_last(*lst);
+		last->next = new;
+	}
 	else
 		*lst = new;
 }
 
 void	cmd_clear(t_cmd **cmd)
 {
+	t_cmd	*tmp;
+	t_token	*redir_tmp;
+
 	if (!cmd || !*cmd)
 		return ;
-	if ((*cmd)->next)
-		cmd_clear(&(*cmd)->next);
-	if ((*cmd)->arguments)
-		lstclear(&(*cmd)->arguments);
-	if ((*cmd)->redirection)
-		token_clear((*cmd)->redirection);
-	free(*cmd);
-	*cmd = NULL;
+	while (*cmd)
+	{
+		tmp = (*cmd)->next;
+		ft_lstclear(&(*cmd)->arguments, free);
+		while ((*cmd)->redirection)
+		{
+			redir_tmp = (*cmd)->redirection->next;
+			free((*cmd)->redirection->val);
+			free((*cmd)->redirection);
+			(*cmd)->redirection = redir_tmp;
+		}
+		free(*cmd);
+		*cmd = tmp;
+	}
 }

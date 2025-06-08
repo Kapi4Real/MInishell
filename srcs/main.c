@@ -1,43 +1,88 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: user <user@student.42.fr>                  +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/05/01 12:00:00 by user              #+#    #+#             */
+/*   Updated: 2023/05/01 12:00:00 by user             ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "parsing.h"
 #include "minishell.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <signal.h>
+#include <string.h>
 
 char **g_env = NULL;
+int g_exit_status = 0;
 
-int main(int ac, char **av, char **envp)
-{
-    char    *line;
-    t_token *tokens;
-    t_cmd   *cmds;
-    int     status;
 
-    (void)ac;
-    (void)av;
-    g_env = copy_env(envp);
-    if (!g_env)
-        return (1);
-    status = 0;
-    while (1)
-    {
-        printf("minishell> ");
-        line = get_next_line(0);
-        if (!line)
-        {
-            printf("\n");
-            break;
-        }
-        if (*line)
-        {
-            tokens = tokenizer(line);
-            if (parsing(&tokens))
-            {
-                cmds = cmd(tokens);
-                status = exec_commands(cmds, g_env);
-                cmd_clear(&cmds);
-            }
-            token_clear(tokens);
-        }
-        free(line);
+
+char **parse_input(char *input) {
+    char **args = malloc(64 * sizeof(char *));
+    char *token = strtok(input, " ");
+    int i = 0;
+
+    while (token != NULL) {
+        args[i] = token;
+        i++;
+        token = strtok(NULL, " ");
     }
-    free_env(g_env);
-    return (status);
+    args[i] = NULL;
+    return args;
 }
 
+int execute_command(char **args) {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        execvp(args[0], args);
+        perror("minishell");
+        exit(1);
+    } else if (pid > 0) {
+        wait(NULL);
+    } else {
+        perror("fork");
+        return 1;
+    }
+    return 0;
+}
+
+int main() {
+    char *input;
+    t_token *tokens;
+    t_cmd *cmds;
+
+    setup_signals();
+
+    while (1) {
+        input = readline("minishell> ");
+        if (!input) break;
+        if (strlen(input) > 0) {
+            add_history(input);
+            tokens = lexer(input);
+            if (!tokens) {
+                free(input);
+                continue;
+            }
+            cmds = parser(tokens);
+            token_clear(tokens);
+            if (!cmds) {
+                free(input);
+                continue;
+            }
+            exec_commands(cmds, g_env);
+            cmd_clear(&cmds);
+        }
+        free(input);
+    }
+    return 0;
+}

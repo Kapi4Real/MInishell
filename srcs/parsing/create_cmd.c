@@ -12,27 +12,60 @@
 
 #include "minishell.h"
 
-static void	add_token(t_token **token, t_cmd **commands, t_cmd **current)
+static int	is_redirection(t_arg type)
 {
-	t_token	*new;
-	t_token	*prev;
+	return (type == INPUT || type == OUTPUT || type == APPEND || type == HEREDOC);
+}
 
-	if ((*token)->type == WORD)
-		lstadd_back(&(*current)->arguments, lstnew((*token)->val));
-	else if ((*token)->type == PIPE)
+t_cmd	*create_cmd(t_token **tokens)
+{
+	t_cmd	*cmd;
+
+	cmd = cmd_new();
+	if (!cmd || !tokens || !*tokens)
+		return (NULL);
+	while (*tokens && (*tokens)->type != PIPE)
 	{
-		free((*token)->val);
-		(*current) = cmd_new();
-		cmd_add_back(commands, (*current));
+		if ((*tokens)->type == WORD)
+			ft_lstadd_back(&cmd->arguments,
+				ft_lstnew(ft_strdup((*tokens)->val)));
+		else if (is_redirection((*tokens)->type))
+		{
+			token_add_back(&cmd->redirection,
+				token_new(ft_strdup((*tokens)->val), (*tokens)->type));
+			*tokens = (*tokens)->next;
+			if (*tokens && (*tokens)->type == WORD)
+				token_add_back(&cmd->redirection,
+					token_new(ft_strdup((*tokens)->val), WORD));
+		}
+		*tokens = (*tokens)->next;
 	}
-	else
+	return (cmd);
+}
+
+static void	process_token(t_token *token, t_cmd **commands, t_cmd **current)
+{
+	t_token	*new_redir;
+	t_token	*file;
+
+	if (token->type == WORD)
+		ft_lstadd_back(&(*current)->arguments,
+			ft_lstnew(ft_strdup(token->val)));
+	else if (token->type == PIPE)
 	{
-		new = token_new((*token)->next->val, (*token)->type);
-		token_add_back(&(*current)->redirection, new);
-		prev = *token;
-		*token = (*token)->next;
-		free(prev->val);
-		free(prev);
+		*current = cmd_new();
+		cmd_add_back(commands, *current);
+	}
+	else if (is_redirection(token->type))
+	{
+		new_redir = token_new(ft_strdup(token->val), token->type);
+		token_add_back(&(*current)->redirection, new_redir);
+		if (token->next && token->next->type == WORD)
+		{
+			file = token_new(ft_strdup(token->next->val), WORD);
+			token_add_back(&(*current)->redirection, file);
+			token = token->next;
+		}
 	}
 }
 
@@ -40,20 +73,17 @@ t_cmd	*cmd(t_token *token)
 {
 	t_cmd	*commands;
 	t_cmd	*current;
-	t_token	*prev;
+	t_token	*tmp;
 
-	commands = NULL;
-	if (token)
+	if (!token)
+		return (NULL);
+	current = cmd_new();
+	commands = current;
+	tmp = token;
+	while (tmp)
 	{
-		current = cmd_new();
-		cmd_add_back(&commands, current);
-	}
-	while (token)
-	{
-		add_token(&token, &commands, &current);
-		prev = token;
-		token = token->next;
-		free(prev);
+		process_token(tmp, &commands, &current);
+		tmp = tmp->next;
 	}
 	return (commands);
 }

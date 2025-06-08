@@ -10,98 +10,93 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "parsing.h"
 #include "minishell.h"
+#include "libft.h"
 
-void	skip(char *s, int *i)
+#include "parsing.h"
+#include "minishell.h"
+#include "libft.h"
+
+void skip(char *s, int *i)
 {
-	while (s[*i] != 0 && (s[*i] == ' ' || s[*i] == '\t'))
-		(*i)++;
+    while (s[*i] != 0 && (s[*i] == ' ' || s[*i] == '\t'))
+        (*i)++;
 }
 
-int	tokenize_word(t_token **tok_lst, char *val)
+int tokenize_word(t_token **tok_lst, char *val)
 {
-	t_token	*new_token;
-	int		squote;
-	int		dquote;
-	char	*word;
-	int		i;
-
-	i = 0;
-	squote = 0;
-	dquote = 0;
-	while (val[i] != 0)
-	{
-		if ((val[i] == ' ' || val[i] == '|' || val[i] == '<' || val[i] == '\t'
-				|| val[i] == '>') && (squote == 0 && dquote == 0))
-			break ;
-		if (val[i] == '"' && (dquote == 0 || squote == 1))
-			dquote = !dquote;
-		else if (val[i] == '\'' && (dquote == 1 || squote == 0))
-			squote = !squote;
-		i++;
-	}
-	word = ft_substr(val, 0, i);
-	new_token = token_new(word, WORD);
-	token_add_back(tok_lst, new_token);
-	return (i);
+    int i = 0;
+    while (val[i] && !ft_isspace(val[i])
+           && val[i] != '|' && val[i] != '<' && val[i] != '>')
+    {
+        if (val[i] == '$' && (val[i+1] == '?' || ft_isalnum(val[i+1])))
+        {
+            i += (val[i+1] == '?') ? 2 : 1;
+            while (val[i] && ft_isalnum(val[i]))
+                i++;
+            continue;
+        }
+        i++;
+    }
+    if (i > 0)
+        add_token(tok_lst, create_token(ft_substr(val, 0, i), WORD));
+    return i;
 }
 
-static void	add_symbol(t_token **tok_lst, char *symbol, int double_redirect)
+static void add_symbol(t_token **tok_lst, char *symbol, int double_redirect)
 {
-	t_token	*new_token;
-
-	if (symbol[0] == '<')
-	{
-		if (double_redirect == 1)
-			new_token = token_new(symbol, HEREDOC);
-		else
-			new_token = token_new(symbol, INPUT);
-	}
-	else if (symbol[0] == '>')
-	{
-		if (double_redirect == 1)
-			new_token = token_new(symbol, APPEND);
-		else
-			new_token = token_new(symbol, OUTPUT);
-	}
-	else
-		new_token = token_new(symbol, PIPE);
-	token_add_back(tok_lst, new_token);
+    if (symbol[0] == '<')
+    {
+        if (double_redirect == 1)
+            add_token(tok_lst, create_token(symbol, HEREDOC));
+        else
+            add_token(tok_lst, create_token(symbol, INPUT));
+    }
+    else if (symbol[0] == '>')
+    {
+        if (double_redirect == 1)
+            add_token(tok_lst, create_token(symbol, APPEND));
+        else
+            add_token(tok_lst, create_token(symbol, OUTPUT));
+    }
+    else
+        add_token(tok_lst, create_token(symbol, PIPE));
 }
 
-int	tokenize_symbol(t_token **tok_lst, char *val)
+int tokenize_symbol(t_token **tok_lst, char *val)
 {
-	char	*symbol;
-	int		i;
-	int		double_redirect;
+    char *symbol;
+    int i;
+    int double_redirect;
 
-	double_redirect = 0;
-	if ((val[0] == '<' && val[1] == '<') || (val[0] == '>' && val[1] == '>'))
-	{
-		double_redirect = 1;
-		i = 2;
-	}
-	else
-		i = 1;
-	symbol = ft_substr(val, 0, i);
-	add_symbol(tok_lst, symbol, double_redirect);
-	return (i);
+    double_redirect = 0;
+    if ((val[0] == '<' && val[1] == '<') || (val[0] == '>' && val[1] == '>'))
+    {
+        double_redirect = 1;
+        i = 2;
+    }
+    else
+        i = 1;
+    symbol = ft_substr(val, 0, i);
+    add_symbol(tok_lst, symbol, double_redirect);
+    return i;
 }
 
-t_token	*tokenizer(char *arg)
+t_token *tokenizer(char *arg)
 {
-	int		i;
-	t_token	*token;
+    int i;
+    t_token *token;
 
-	i = 0;
-	token = NULL;
-	while (arg[i] != 0)
-	{
-		skip(arg, &i);
-		if (arg[i] == '<' || arg[i] == '>' || arg[i] == '|')
-			i += tokenize_symbol(&token, arg + i);
-		else if (arg[i] != 0)
-			i += tokenize_word(&token, arg + i);
-	}
-	return (token);
+    i = 0;
+    token = NULL;
+    while (arg[i] != 0)
+    {
+        skip(arg, &i);
+        if (arg[i] == '<' || arg[i] == '>' || arg[i] == '|')
+            i += tokenize_symbol(&token, arg + i);
+        else if (arg[i] != 0)
+            i += tokenize_word(&token, arg + i);
+    }
+    return token;
 }

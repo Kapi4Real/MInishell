@@ -1,42 +1,44 @@
 #include "minishell.h"
+#include <limits.h>
 
-void echo (char **args)
+int ft_echo(char **args)
 {
-	int		newline;
-	int		i;
+    int newline = 1;
+    int i = 1;
 
-	newline = 1;
-	i = 1;
-
-	if(args[1] && (strcmp(args[1], "-n") == 0))
-	{
-		newline = 0;
-		i++;
-	}
-
-	while(args[i])
-	{
-		printf("%s", args[i]);
-		if(args[i + 1])
-			printf(" ");
-		i++;
-	}
-
-	if (newline)
-		printf("\n");
+    if (args[1] && !ft_strcmp(args[1], "-n")) {
+        newline = 0;
+        i++;
+    }
+    while (args[i]) {
+        ft_putstr_fd(args[i], 1);
+        if (args[i + 1])
+            write(1, " ", 1);
+        i++;
+    }
+    if (newline)
+        write(1, "\n", 1);
+    return (0);
 }
 
-void ft_pwd(void)
+int    ft_pwd(void)
 {
-	char *cwd[PATH_MAX];
+    char    cwd[PATH_MAX];
 
-	if(getcwd(cwd, sizeof(cwd)) != NULL)
-		printf("%s",cwd);
-	else
-		perror("minishell : pwd");
+    if (getcwd(cwd, sizeof(cwd)) != NULL)
+    {
+        write(STDOUT_FILENO, cwd, ft_strlen(cwd));
+        write(STDOUT_FILENO, "\n", 1);
+    }
+    else
+    {
+        write(STDERR_FILENO, "minishell: pwd: ", 16);
+        perror("");
+    }
+    return 0;
 }
 
-void ft_env (char **envp)
+int ft_env (char **envp)
 {
 	int	i;
 
@@ -46,5 +48,75 @@ void ft_env (char **envp)
 		printf("%s",envp[i]);
 		i++;
 	}
+	return 0;
 }
 
+int ft_cd(char **args)
+{
+    if (!args[1] || ft_strcmp(args[1], "~") == 0)
+    {
+        if (chdir(getenv("HOME")) != 0)
+        {
+            perror("cd");
+            return 1;
+        }
+    }
+    else if (chdir(args[1]) != 0)
+    {
+        perror("cd");
+        return 1;
+    }
+    return 0;
+}
+
+int ft_export(char **args)
+{
+    if (!args[1]) return ft_env(g_env);
+
+    char *equal = ft_strchr(args[1], '=');
+    if (equal)
+    {
+        *equal = '\0';
+        char *value = equal + 1;
+        if (setenv(args[1], value, 1) == -1)
+        {
+            perror("export");
+            return 1;
+        }
+    }
+    return 0;
+}
+
+int ft_unset(char **args)
+{
+    if (!args[1]) return 0;
+    if (unsetenv(args[1]) == -1)
+    {
+        perror("unset");
+        return 1;
+    }
+    return 0;
+}
+
+
+int ft_exit(char **args)
+{
+    int exit_code = 0;
+    int is_numeric = 1;
+
+    if (args[1]) {
+        if (args[2]) {
+            ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
+            return 1;
+        }
+        is_numeric = ft_isdigit_str(args[1]);
+        if (!is_numeric) {
+            ft_putstr_fd("minishell: exit: numeric argument required\n", STDERR_FILENO);
+            exit_code = 2;
+        } else {
+            exit_code = ft_atoi(args[1]);
+        }
+    }
+
+    exit(exit_code);
+}
