@@ -49,8 +49,13 @@ int     run_builtin(t_cmd *cmd);
 
 /* Environment */
 t_env   *envp_to_lst(char **envp);
-void    env_clear(t_env *lst);
 char    **env_to_array(t_env *env);
+t_env *env_new(char *name, char *val);
+void env_add_back(t_env **env, t_env *new);
+void env_clear(t_env *lst);
+void expand_tokens(t_token **tokens, t_env *env);
+char *remove_quotes(const char *str, t_env *env);
+char *expand_vars_in_string(char *str, t_env *env);
 
 /* Execution */
 int exec_external(t_cmd *cmd, char **envp);
@@ -74,6 +79,14 @@ void	cmd_not_found(char *cmd);
 void	exec_child(char *path, char **args, char **envp);
 int	fork_error(char *path, char **args);
 int	handle_heredoc(char *delimiter, int *input_fd, int first_exit_s, int n_line);
+t_cmd *cmd(t_token *token, t_env *env);
+t_cmd   *parser(t_token *tokens, t_env *env);
+
+
+// Corriger le prototype de create_cmd
+t_cmd *create_cmd(t_token **tokens, t_env *env);
+
+
 
 /* Environment */
 char **env_to_array(t_env *env);
@@ -81,6 +94,5 @@ void    free_str_array(char **array);
 char    **list_to_str_array(t_list *lst);
 
 /* Parsing */
-t_cmd *parser(t_token *tokens);
 
 #endif

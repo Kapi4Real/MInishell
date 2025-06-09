@@ -14,10 +14,6 @@
 #include "minishell.h"
 #include "libft.h"
 
-#include "parsing.h"
-#include "minishell.h"
-#include "libft.h"
-
 void skip(char *s, int *i)
 {
     while (s[*i] != 0 && (s[*i] == ' ' || s[*i] == '\t'))
@@ -27,53 +23,53 @@ void skip(char *s, int *i)
 int tokenize_word(t_token **tok_lst, char *val)
 {
     int i = 0;
-    while (val[i] && !ft_isspace(val[i]) 
-           && val[i] != '|' && val[i] != '<' && val[i] != '>')
+    int start;
+
+    while (val[i] && !ft_isspace(val[i]))
     {
-        if (val[i] == '$' && (val[i+1] == '?' || ft_isalnum(val[i+1]) || val[i+1] == '_'))
+        if (val[i] == '$' && (val[i+1] == '?' || ft_isalnum(val[i+1])))
         {
-            // Crée un token spécial pour les variables
-            int start = i;
-            i += (val[i+1] == '?') ? 2 : 1;
+            start = i++;
             while (val[i] && (ft_isalnum(val[i]) || val[i] == '_'))
                 i++;
-            add_token(tok_lst, 
-                create_token(ft_substr(val, start, i - start), EXPAND_VAR));
+            add_token(tok_lst, create_token(ft_substr(val, start, i - start), EXPAND_VAR));
             continue;
         }
         i++;
     }
-    if (i > 0 && val[0] != '$')
+    if (i > 0)
         add_token(tok_lst, create_token(ft_substr(val, 0, i), WORD));
     return i;
 }
 
-
-
 char *expand_var(char *str, t_env *env)
 {
-    if (str[0] != '$') return ft_strdup(str);
+    if (!str || str[0] != '$')
+        return ft_strdup(str);
     
-    if (str[1] == '?') {
-        char *exit_status = ft_itoa(g_exit_status);
-        return exit_status;
-    }
+    if (str[1] == '?')
+        return ft_itoa(g_exit_status);
 
     char *var_name = str + 1;
     t_env *node = env;
-    while (node) {
+    
+    while (node)
+    {
         if (ft_strcmp(node->name, var_name) == 0)
             return ft_strdup(node->val);
         node = node->next;
     }
-    return ft_strdup(""); // Retourne chaîne vide si variable non trouvée
+    return ft_strdup("");
 }
 
 void expand_tokens(t_token **tokens, t_env *env)
 {
     t_token *tmp = *tokens;
-    while (tmp) {
-        if (tmp->type == EXPAND_VAR) {
+
+    while (tmp)
+    {
+        if (tmp->type == EXPAND_VAR)
+        {
             char *expanded = expand_var(tmp->val, env);
             free(tmp->val);
             tmp->val = expanded;

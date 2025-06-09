@@ -1,15 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.c                                             :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: user <user@student.42.fr>                  +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/05/01 12:00:00 by user              #+#    #+#             */
-/*   Updated: 2023/05/01 12:00:00 by user             ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "parsing.h"
 #include "minishell.h"
 #include <stdio.h>
@@ -24,46 +12,33 @@
 char **g_env = NULL;
 int g_exit_status = 0;
 
-
-
-char **parse_input(char *input) {
-    char **args = malloc(64 * sizeof(char *));
-    char *token = strtok(input, " ");
-    int i = 0;
-
-    while (token != NULL) {
-        args[i] = token;
-        i++;
-        token = strtok(NULL, " ");
-    }
-    args[i] = NULL;
-    return args;
-}
-
-int execute_command(char **args) {
-    pid_t pid = fork();
-
-    if (pid == 0) {
-        execvp(args[0], args);
-        perror("minishell");
-        exit(1);
-    } else if (pid > 0) {
-        wait(NULL);
-    } else {
-        perror("fork");
-        return 1;
-    }
-    return 0;
-}
-
-int main(int ac, char **av,char **envp) 
+static void init_env(t_env **env, char **envp)
 {
-	(void)ac;
-	(void)av;
+    char *eq;
+    
+    while (*envp)
+    {
+        eq = strchr(*envp, '=');
+        if (eq)
+        {
+            *eq = '\0';
+            env_add_back(env, env_new(*envp, eq + 1));
+            *eq = '=';
+        }
+        envp++;
+    }
+}
+
+int main(int ac, char **av, char **envp) 
+{
+    (void)ac;
+    (void)av;
     char *input;
     t_token *tokens;
     t_cmd *cmds;
+    t_env *env = NULL;
 
+    init_env(&env, envp);
     g_env = envp;  
     setup_signals();
 
@@ -72,21 +47,35 @@ int main(int ac, char **av,char **envp)
         if (!input) break;
         if (strlen(input) > 0) {
             add_history(input);
-            tokens = lexer(input);
+            if (!check_quotes(input)) {
+                ft_putstr_fd("minishell: syntax error: unclosed quotes\n", 2);
+                free(input);
+                g_exit_status = 1;
+                continue;
+            }
+            tokens = tokenizer(input);
             if (!tokens) {
                 free(input);
                 continue;
             }
-            cmds = parser(tokens);
+            if (!parsing(&tokens)) {
+                ft_putstr_fd("minishell: syntax error\n", 2);
+                token_clear(tokens);
+                free(input);
+                g_exit_status = 2;
+                continue;
+            }
+	    cmds = cmd(tokens, env);
             token_clear(tokens);
             if (!cmds) {
                 free(input);
                 continue;
             }
-            exec_commands(cmds, g_env);
+            exec_commands(cmds, envp); // On utilise envp au lieu de env
             cmd_clear(&cmds);
         }
         free(input);
     }
-    return 0;
+    env_clear(env);
+    return (g_exit_status);
 }

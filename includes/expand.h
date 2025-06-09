@@ -10,7 +10,6 @@
 void    expand_tokens(t_token **tokens, t_env *env);
 char *expand_var(char *str, t_env *env, int exit_status);
 char    *supp_dollars(char *str);
-char    *remove_quotes(const char *str);
 
 /* Heredoc */
 int handle_heredoc(char *delimiter, int *input_fd, int first_exit_s, int n_line);
