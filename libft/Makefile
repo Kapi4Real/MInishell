@@ -45,7 +45,6 @@ SRC = ft_atoi.c \
 	  ft_putnbr_fd.c \
 	  ft_split.c \
 	  ft_strcmp.c \
-	  ft_isdigit_str.c\
 	  ft_strjoin3.c\
 	  ft_lstadd_back.c \
 	  ft_lstclear.c \
@@ -56,11 +55,6 @@ SRC = ft_atoi.c \
           ft_lstdelone.c \
           ft_lstiter.c \
           ft_lstmap.c \
-	  ft_isspace.c\
-	  ft_strspn.c\
-	  ft_strcspn.c\
-	  ft_strtok.c\
-	 	
 
 
 	  

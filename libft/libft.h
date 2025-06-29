@@ -68,11 +68,6 @@ t_list		*ft_lstnew(void *content);
 t_list		*ft_lstlast(t_list *lst);
 t_list		*ft_lstmap(t_list *lst, void *(*f)(void *), void (*del)(void *));
 int			ft_strcmp(const char *s1, const char *s2);
-int			ft_isdigit_str(const char *str);
 char		*ft_strjoin3(char const *s1, char const *s2, char const *s3);
-int			ft_isspace(int c);
-char		*ft_strtok(char *str, const char *delim);
-size_t		ft_strspn(const char *s, const char *accept);
-size_t		ft_strcspn(const char *s, const char *reject);
 
 #endif
